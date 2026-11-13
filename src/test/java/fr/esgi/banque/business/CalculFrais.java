@@ -1,5 +1,6 @@
 package fr.esgi.banque.business;
 
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -43,5 +44,23 @@ class CalculFraisTest {
 
         // Assert
         assertThat(frais).isEqualByComparingTo("2.00");
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "18, 0.00",
+            "25, 0.00",
+            "26, 2.00",
+            "27, 2.00"
+    })
+    void shouldWaiveKeepingFeesOnlyBelowAge26(int age, String fraisAttendus) {
+        // Arrange
+        BigDecimal soldeMoyen = new BigDecimal("500");
+
+        // Act
+        BigDecimal frais = calculFrais.fraisMensuels(age, soldeMoyen, false);
+
+        // Assert
+        assertThat(frais).isEqualByComparingTo(fraisAttendus);
     }
 }
