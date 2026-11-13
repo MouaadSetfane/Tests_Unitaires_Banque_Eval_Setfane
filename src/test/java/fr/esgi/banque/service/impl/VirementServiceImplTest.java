@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import fr.esgi.banque.business.VirementRefuseException;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -174,5 +175,38 @@ class VirementServiceImplTest {
 
         // Assert
         verify(notifications, never()).alerter(any(), any());
+    }
+
+    @Test
+    void shouldRejectTransferOnSundayAndSaveNothing() {
+        // Arrange : dimanche 15 novembre 2026
+        Clock dimanche = Clock.fixed(Instant.parse("2026-11-15T10:00:00Z"), ZoneId.of("Europe/Paris"));
+        VirementServiceImpl serviceDimanche = new VirementServiceImpl(repository, notifications, dimanche);
+        Compte source = new Compte("FR001", "Alice", new BigDecimal("1000"), BigDecimal.ZERO);
+        Compte destination = new Compte("FR002", "Bob", new BigDecimal("500"), BigDecimal.ZERO);
+        when(repository.trouver("FR001")).thenReturn(Optional.of(source));
+        when(repository.trouver("FR002")).thenReturn(Optional.of(destination));
+
+        // Act + Assert
+        assertThatThrownBy(() -> serviceDimanche.virer("FR001", "FR002", new BigDecimal("100")))
+                .isInstanceOf(VirementRefuseException.class);
+        verify(repository, never()).sauvegarder(any());
+    }
+
+    @Test
+    void shouldAcceptTransferOnSaturday() {
+        // Arrange : samedi 14 novembre 2026
+        Clock samedi = Clock.fixed(Instant.parse("2026-11-14T10:00:00Z"), ZoneId.of("Europe/Paris"));
+        VirementServiceImpl serviceSamedi = new VirementServiceImpl(repository, notifications, samedi);
+        Compte source = new Compte("FR001", "Alice", new BigDecimal("1000"), BigDecimal.ZERO);
+        Compte destination = new Compte("FR002", "Bob", new BigDecimal("500"), BigDecimal.ZERO);
+        when(repository.trouver("FR001")).thenReturn(Optional.of(source));
+        when(repository.trouver("FR002")).thenReturn(Optional.of(destination));
+
+        // Act
+        Virement virement = serviceSamedi.virer("FR001", "FR002", new BigDecimal("100"));
+
+        // Assert
+        assertThat(virement.date()).isEqualTo(LocalDate.of(2026, 11, 14));
     }
 }
