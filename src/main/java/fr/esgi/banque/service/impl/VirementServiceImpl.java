@@ -1,4 +1,4 @@
-package fr.esgi.banque.service;
+package impl;
 
 public interface VirementServiceImpl {
 }
