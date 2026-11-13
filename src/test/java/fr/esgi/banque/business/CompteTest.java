@@ -71,4 +71,14 @@ class CompteTest {
 		assertThatThrownBy(() -> compte.crediter(new BigDecimal(montant)))
 				.isInstanceOf(IllegalArgumentException.class);
 	}
+	@ParameterizedTest
+	@CsvSource({"0", "0.00", "-1", "-0.01"})
+	void shouldRejectDebitWhenAmountIsNotStrictlyPositive(String montant) {
+		// Arrange
+		Compte compte = new Compte("FR001", "Alice", new BigDecimal("100.00"), new BigDecimal("200"));
+
+		// Act + Assert
+		assertThatThrownBy(() -> compte.debiter(new BigDecimal(montant)))
+				.isInstanceOf(IllegalArgumentException.class);
+	}
 }
