@@ -10,11 +10,14 @@ import java.time.LocalDate;
 import java.math.BigDecimal;
 import java.time.Clock;
 
+
+
 public class VirementServiceImpl {
 
     private final CompteRepository repository;
     private final NotificationService notifications;
     private final Clock horloge;
+    private static final BigDecimal SEUIL_ALERTE = new BigDecimal("10000");
 
     public VirementServiceImpl(CompteRepository repository, NotificationService notifications, Clock horloge) {
         this.repository = repository;
@@ -37,6 +40,10 @@ public class VirementServiceImpl {
         destination.crediter(montant);
         repository.sauvegarder(source);
         repository.sauvegarder(destination);
+        if (montant.compareTo(SEUIL_ALERTE) > 0) {
+            notifications.alerter(source.getTitulaire(),
+                    "Virement de " + montant + " € vers le compte " + numeroDestination);
+        }
         return new Virement(numeroSource, numeroDestination, montant, LocalDate.now(horloge));
     }
 }
