@@ -6,6 +6,8 @@ import fr.esgi.banque.service.NotificationService;
 import fr.esgi.banque.business.Compte;
 import fr.esgi.banque.business.CompteIntrouvableException;
 import java.time.LocalDate;
+import java.time.DayOfWeek;
+import fr.esgi.banque.business.VirementRefuseException;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -36,6 +38,9 @@ public class VirementServiceImpl {
                 .orElseThrow(() -> new CompteIntrouvableException(numeroSource));
         Compte destination = repository.trouver(numeroDestination)
                 .orElseThrow(() -> new CompteIntrouvableException(numeroDestination));
+        if (LocalDate.now(horloge).getDayOfWeek() == DayOfWeek.SUNDAY) {
+            throw new VirementRefuseException("Aucun virement n'est accepté le dimanche");
+        }
         source.debiter(montant);
         destination.crediter(montant);
         repository.sauvegarder(source);
