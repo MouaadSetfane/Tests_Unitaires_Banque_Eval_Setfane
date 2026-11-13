@@ -21,6 +21,8 @@ import static org.mockito.Mockito.verify;
 import fr.esgi.banque.business.SoldeInsuffisantException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -141,5 +143,36 @@ class VirementServiceImplTest {
                 .isInstanceOf(SoldeInsuffisantException.class);
         verify(repository, never()).sauvegarder(any());
         assertThat(destination.getSolde()).isEqualByComparingTo("500");
+    }
+
+    @Test
+    void shouldAlertSourceOwnerWhenAmountExceedsTenThousand() {
+        // Arrange
+        Compte source = new Compte("FR001", "Alice", new BigDecimal("50000"), BigDecimal.ZERO);
+        Compte destination = new Compte("FR002", "Bob", new BigDecimal("500"), BigDecimal.ZERO);
+        when(repository.trouver("FR001")).thenReturn(Optional.of(source));
+        when(repository.trouver("FR002")).thenReturn(Optional.of(destination));
+
+        // Act
+        service.virer("FR001", "FR002", new BigDecimal("10000.01"));
+
+        // Assert
+        verify(notifications).alerter(eq("Alice"), anyString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"100", "9999.99", "10000", "10000.00"})
+    void shouldNotAlertWhenAmountIsAtMostTenThousand(String montant) {
+        // Arrange
+        Compte source = new Compte("FR001", "Alice", new BigDecimal("50000"), BigDecimal.ZERO);
+        Compte destination = new Compte("FR002", "Bob", new BigDecimal("500"), BigDecimal.ZERO);
+        when(repository.trouver("FR001")).thenReturn(Optional.of(source));
+        when(repository.trouver("FR002")).thenReturn(Optional.of(destination));
+
+        // Act
+        service.virer("FR001", "FR002", new BigDecimal(montant));
+
+        // Assert
+        verify(notifications, never()).alerter(any(), any());
     }
 }
