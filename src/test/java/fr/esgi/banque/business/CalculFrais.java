@@ -63,4 +63,22 @@ class CalculFraisTest {
         // Assert
         assertThat(frais).isEqualByComparingTo(fraisAttendus);
     }
+
+    @ParameterizedTest
+    @CsvSource({
+            "999.99,  2.00",
+            "1000,    0.00",
+            "1000.00, 0.00",
+            "1000.01, 0.00"
+    })
+    void shouldWaiveKeepingFeesWhenAverageBalanceReachesThreshold(String soldeMoyen, String fraisAttendus) {
+        // Arrange
+        int age = 30;
+
+        // Act
+        BigDecimal frais = calculFrais.fraisMensuels(age, new BigDecimal(soldeMoyen), false);
+
+        // Assert
+        assertThat(frais).isEqualByComparingTo(fraisAttendus);
+    }
 }
