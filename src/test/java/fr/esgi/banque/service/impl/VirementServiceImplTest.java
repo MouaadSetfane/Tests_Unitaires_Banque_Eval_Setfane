@@ -10,6 +10,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.Test;
+import fr.esgi.banque.business.Compte;
+import fr.esgi.banque.business.CompteIntrouvableException;
+import java.util.Optional;
+import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -57,5 +61,27 @@ class VirementServiceImplTest {
         // Act + Assert
         assertThatThrownBy(() -> service.virer("FR001", "FR001", montant))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldRejectTransferWhenSourceAccountDoesNotExist() {
+        // Arrange
+        when(repository.trouver("FR001")).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> service.virer("FR001", "FR002", new BigDecimal("100")))
+                .isInstanceOf(CompteIntrouvableException.class);
+    }
+
+    @Test
+    void shouldRejectTransferWhenDestinationAccountDoesNotExist() {
+        // Arrange
+        Compte source = new Compte("FR001", "Alice", new BigDecimal("1000"), BigDecimal.ZERO);
+        when(repository.trouver("FR001")).thenReturn(Optional.of(source));
+        when(repository.trouver("FR002")).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> service.virer("FR001", "FR002", new BigDecimal("100")))
+                .isInstanceOf(CompteIntrouvableException.class);
     }
 }
