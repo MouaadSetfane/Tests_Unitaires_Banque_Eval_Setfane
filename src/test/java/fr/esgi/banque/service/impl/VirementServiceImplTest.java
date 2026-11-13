@@ -9,6 +9,7 @@ import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -45,6 +46,16 @@ class VirementServiceImplTest {
 
         // Act + Assert
         assertThatThrownBy(() -> service.virer("FR001", "FR002", valeur))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldRejectTransferToSameAccount() {
+        // Arrange
+        BigDecimal montant = new BigDecimal("100");
+
+        // Act + Assert
+        assertThatThrownBy(() -> service.virer("FR001", "FR001", montant))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }
