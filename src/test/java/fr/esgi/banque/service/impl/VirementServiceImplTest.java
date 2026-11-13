@@ -14,6 +14,10 @@ import fr.esgi.banque.business.Compte;
 import fr.esgi.banque.business.CompteIntrouvableException;
 import java.util.Optional;
 import static org.mockito.Mockito.when;
+import fr.esgi.banque.business.Virement;
+import java.time.LocalDate;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -83,5 +87,41 @@ class VirementServiceImplTest {
         // Act + Assert
         assertThatThrownBy(() -> service.virer("FR001", "FR002", new BigDecimal("100")))
                 .isInstanceOf(CompteIntrouvableException.class);
+    }
+
+    @Test
+    void shouldDebitSourceCreditDestinationAndSaveBothAccounts() {
+        // Arrange
+        Compte source = new Compte("FR001", "Alice", new BigDecimal("1000"), BigDecimal.ZERO);
+        Compte destination = new Compte("FR002", "Bob", new BigDecimal("500"), BigDecimal.ZERO);
+        when(repository.trouver("FR001")).thenReturn(Optional.of(source));
+        when(repository.trouver("FR002")).thenReturn(Optional.of(destination));
+
+        // Act
+        service.virer("FR001", "FR002", new BigDecimal("100"));
+
+        // Assert
+        assertThat(source.getSolde()).isEqualByComparingTo("900");
+        assertThat(destination.getSolde()).isEqualByComparingTo("600");
+        verify(repository).sauvegarder(source);
+        verify(repository).sauvegarder(destination);
+    }
+
+    @Test
+    void shouldReturnTransferWithTodayDate() {
+        // Arrange
+        Compte source = new Compte("FR001", "Alice", new BigDecimal("1000"), BigDecimal.ZERO);
+        Compte destination = new Compte("FR002", "Bob", new BigDecimal("500"), BigDecimal.ZERO);
+        when(repository.trouver("FR001")).thenReturn(Optional.of(source));
+        when(repository.trouver("FR002")).thenReturn(Optional.of(destination));
+
+        // Act
+        Virement virement = service.virer("FR001", "FR002", new BigDecimal("100"));
+
+        // Assert
+        assertThat(virement.numeroSource()).isEqualTo("FR001");
+        assertThat(virement.numeroDestination()).isEqualTo("FR002");
+        assertThat(virement.montant()).isEqualByComparingTo("100");
+        assertThat(virement.date()).isEqualTo(LocalDate.of(2026, 11, 12));
     }
 }
