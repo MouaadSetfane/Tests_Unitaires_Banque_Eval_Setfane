@@ -18,6 +18,9 @@ import fr.esgi.banque.business.Virement;
 import java.time.LocalDate;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import fr.esgi.banque.business.SoldeInsuffisantException;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -123,5 +126,20 @@ class VirementServiceImplTest {
         assertThat(virement.numeroDestination()).isEqualTo("FR002");
         assertThat(virement.montant()).isEqualByComparingTo("100");
         assertThat(virement.date()).isEqualTo(LocalDate.of(2026, 11, 12));
+    }
+
+    @Test
+    void shouldPropagateInsufficientBalanceAndSaveNothing() {
+        // Arrange
+        Compte source = new Compte("FR001", "Alice", new BigDecimal("50"), BigDecimal.ZERO);
+        Compte destination = new Compte("FR002", "Bob", new BigDecimal("500"), BigDecimal.ZERO);
+        when(repository.trouver("FR001")).thenReturn(Optional.of(source));
+        when(repository.trouver("FR002")).thenReturn(Optional.of(destination));
+
+        // Act + Assert
+        assertThatThrownBy(() -> service.virer("FR001", "FR002", new BigDecimal("100")))
+                .isInstanceOf(SoldeInsuffisantException.class);
+        verify(repository, never()).sauvegarder(any());
+        assertThat(destination.getSolde()).isEqualByComparingTo("500");
     }
 }
