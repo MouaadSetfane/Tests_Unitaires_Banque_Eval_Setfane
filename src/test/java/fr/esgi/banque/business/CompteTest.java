@@ -81,4 +81,32 @@ class CompteTest {
 		assertThatThrownBy(() -> compte.debiter(new BigDecimal(montant)))
 				.isInstanceOf(IllegalArgumentException.class);
 	}
+
+	@ParameterizedTest
+	@CsvSource({
+			"299.99, -199.99",
+			"300.00, -200.00"
+	})
+	void shouldAcceptDebitUpToOverdraftLimit(String montant, String soldeAttendu) {
+		// Arrange
+		Compte compte = new Compte("FR001", "Alice", new BigDecimal("100.00"), new BigDecimal("200"));
+
+		// Act
+		compte.debiter(new BigDecimal(montant));
+
+		// Assert
+		assertThat(compte.getSolde()).isEqualByComparingTo(soldeAttendu);
+	}
+
+	@ParameterizedTest
+	@CsvSource({"300.01", "500"})
+	void shouldRejectDebitBeyondOverdraftLimitAndKeepBalance(String montant) {
+		// Arrange
+		Compte compte = new Compte("FR001", "Alice", new BigDecimal("100.00"), new BigDecimal("200"));
+
+		// Act + Assert
+		assertThatThrownBy(() -> compte.debiter(new BigDecimal(montant)))
+				.isInstanceOf(SoldeInsuffisantException.class);
+		assertThat(compte.getSolde()).isEqualByComparingTo("100.00");
+	}
 }
