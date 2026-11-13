@@ -81,4 +81,22 @@ class CalculFraisTest {
         // Assert
         assertThat(frais).isEqualByComparingTo(fraisAttendus);
     }
+
+    @ParameterizedTest
+    @CsvSource({
+            "30, 500,  7.00",
+            "20, 500,  5.00",
+            "30, 1000, 5.00",
+            "20, 1000, 5.00"
+    })
+    void shouldAlwaysChargePremiumSupplement(int age, String soldeMoyen, String fraisAttendus) {
+        // Arrange
+        BigDecimal solde = new BigDecimal(soldeMoyen);
+
+        // Act
+        BigDecimal frais = calculFrais.fraisMensuels(age, solde, true);
+
+        // Assert
+        assertThat(frais).isEqualByComparingTo(fraisAttendus);
+    }
 }
