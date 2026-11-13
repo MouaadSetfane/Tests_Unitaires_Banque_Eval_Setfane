@@ -109,4 +109,24 @@ class CompteTest {
 				.isInstanceOf(SoldeInsuffisantException.class);
 		assertThat(compte.getSolde()).isEqualByComparingTo("100.00");
 	}
+
+	@ParameterizedTest
+	@CsvSource({
+			"0,      true",
+			"0.0,    true",
+			"0.00,   true",
+			"0.01,   false",
+			"-0.01,  false",
+			"100,    false"
+	})
+	void shouldBeEmptyOnlyWhenBalanceIsZero(String solde, boolean attendu) {
+		// Arrange
+		Compte compte = new Compte("FR001", "Alice", new BigDecimal(solde), new BigDecimal("200"));
+
+		// Act
+		boolean vide = compte.estVide();
+
+		// Assert
+		assertThat(vide).isEqualTo(attendu);
+	}
 }
